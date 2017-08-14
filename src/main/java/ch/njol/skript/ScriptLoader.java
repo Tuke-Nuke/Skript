@@ -36,6 +36,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 
+import ch.njol.skript.lang.*;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Event;
 import org.eclipse.jdt.annotation.Nullable;
@@ -52,20 +53,6 @@ import ch.njol.skript.config.Node;
 import ch.njol.skript.config.SectionNode;
 import ch.njol.skript.config.SimpleNode;
 import ch.njol.skript.effects.Delay;
-import ch.njol.skript.lang.Condition;
-import ch.njol.skript.lang.Conditional;
-import ch.njol.skript.lang.Expression;
-import ch.njol.skript.lang.Loop;
-import ch.njol.skript.lang.ParseContext;
-import ch.njol.skript.lang.SelfRegisteringSkriptEvent;
-import ch.njol.skript.lang.SkriptEvent;
-import ch.njol.skript.lang.SkriptEventInfo;
-import ch.njol.skript.lang.SkriptParser;
-import ch.njol.skript.lang.Statement;
-import ch.njol.skript.lang.Trigger;
-import ch.njol.skript.lang.TriggerItem;
-import ch.njol.skript.lang.TriggerSection;
-import ch.njol.skript.lang.While;
 import ch.njol.skript.lang.function.Function;
 import ch.njol.skript.lang.function.FunctionEvent;
 import ch.njol.skript.lang.function.Functions;
@@ -918,6 +905,20 @@ final public class ScriptLoader {
 				} else {
 					if (StringUtils.startsWithIgnoreCase(name, "if "))
 						name = "" + name.substring(3);
+					else {
+						Scope.setLastSection(new ScopeSection((SectionNode)n));
+						final Scope eff = Scope.parse(name, null); // null String so Skript won't show error if it is a condition.
+						Scope.setLastSection(null);
+						if (eff != null) { // If false, it will try to check as condition.
+							if (Skript.debug() || n.debug())
+								Skript.debug(indentation + eff.toString(null, true) + ":");
+							final Kleenean hadDelayBefore = hasDelayBefore;
+							items.add(eff);
+							if (hadDelayBefore != Kleenean.TRUE && hasDelayBefore != Kleenean.FALSE)
+								hasDelayBefore = Kleenean.UNKNOWN;
+							continue;
+						}
+					}
 					final Condition cond = Condition.parse(name, "can't understand this condition: '" + name + "'");
 					if (cond == null)
 						continue;

@@ -51,6 +51,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
+import ch.njol.skript.lang.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
@@ -83,17 +84,6 @@ import ch.njol.skript.command.Commands;
 import ch.njol.skript.doc.Documentation;
 import ch.njol.skript.events.EvtSkript;
 import ch.njol.skript.hooks.Hook;
-import ch.njol.skript.lang.Condition;
-import ch.njol.skript.lang.Effect;
-import ch.njol.skript.lang.Expression;
-import ch.njol.skript.lang.ExpressionInfo;
-import ch.njol.skript.lang.ExpressionType;
-import ch.njol.skript.lang.SkriptEvent;
-import ch.njol.skript.lang.SkriptEventInfo;
-import ch.njol.skript.lang.Statement;
-import ch.njol.skript.lang.SyntaxElementInfo;
-import ch.njol.skript.lang.TriggerItem;
-import ch.njol.skript.lang.VariableString;
 import ch.njol.skript.lang.function.Functions;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.skript.localization.Language;
@@ -949,6 +939,7 @@ public final class Skript extends JavaPlugin implements Listener {
 	
 	private final static Collection<SyntaxElementInfo<? extends Condition>> conditions = new ArrayList<>(50);
 	private final static Collection<SyntaxElementInfo<? extends Effect>> effects = new ArrayList<>(50);
+	private final static Collection<SyntaxElementInfo<? extends Scope>> scopes = new ArrayList<>(50);
 	private final static Collection<SyntaxElementInfo<? extends Statement>> statements = new ArrayList<>(100);
 	
 	/**
@@ -970,10 +961,13 @@ public final class Skript extends JavaPlugin implements Listener {
 	 * @param effect The effect's class
 	 * @param patterns Skript patterns to match this effect
 	 */
+	@SuppressWarnings("unchecked")
 	public static <E extends Effect> void registerEffect(final Class<E> effect, final String... patterns) throws IllegalArgumentException {
 		checkAcceptRegistrations();
 		final SyntaxElementInfo<E> info = new SyntaxElementInfo<>(patterns, effect);
 		effects.add(info);
+		if (Scope.class.isAssignableFrom(effect))
+			scopes.add((SyntaxElementInfo<? extends Scope>) info);
 		statements.add(info);
 	}
 	
@@ -987,6 +981,10 @@ public final class Skript extends JavaPlugin implements Listener {
 	
 	public static Collection<SyntaxElementInfo<? extends Effect>> getEffects() {
 		return effects;
+	}
+
+	public static Collection<SyntaxElementInfo<? extends Scope>> getScopes() {
+		return scopes;
 	}
 	
 	// ================ EXPRESSIONS ================
